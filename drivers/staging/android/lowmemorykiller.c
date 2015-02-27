@@ -142,9 +142,126 @@ static int test_task_flag(struct task_struct *p, int flag)
 
 static DEFINE_MUTEX(scan_mutex);
 
-#if defined(CONFIG_CMA_PAGE_COUNTING)
-#define SSWAP_LMK_THRESHOLD	(30720 * 2)
-#define CMA_PAGE_RATIO		70
+
+int can_use_cma_pages(gfp_t gfp_mask)
+{
+	int can_use = 0;
+	int mtype = allocflags_to_migratetype(gfp_mask);
+	int i = 0;
+	int *mtype_fallbacks = get_migratetype_fallbacks(mtype);
+
+	if (is_migrate_cma(mtype)) {
+		can_use = 1;
+	} else {
+		for (i = 0;; i++) {
+			int fallbacktype = mtype_fallbacks[i];
+
+			if (is_migrate_cma(fallbacktype)) {
+				can_use = 1;
+				break;
+			}
+
+			if (fallbacktype == MIGRATE_RESERVE)
+				break;
+		}
+	}
+	return can_use;
+}
+
+struct zone_avail {
+	unsigned long free;
+	unsigned long file;
+};
+
+
+void tune_lmk_zone_param(struct zonelist *zonelist, int classzone_idx,
+					int *other_free, int *other_file,
+					int use_cma_pages,
+				struct zone_avail zall[][MAX_NR_ZONES])
+{
+	struct zone *zone;
+	struct zoneref *zoneref;
+	int zone_idx;
+
+	for_each_zone_zonelist(zone, zoneref, zonelist, MAX_NR_ZONES) {
+		struct zone_avail *za;
+		int node_idx = zone_to_nid(zone);
+
+		zone_idx = zonelist_zone_idx(zoneref);
+		za = &zall[node_idx][zone_idx];
+		za->free = zone_page_state(zone, NR_FREE_PAGES);
+		za->file = zone_page_state(zone, NR_FILE_PAGES)
+					- zone_page_state(zone, NR_SHMEM)
+					- zone_page_state(zone, NR_SWAPCACHE);
+		if (zone_idx == ZONE_MOVABLE) {
+			if (!use_cma_pages) {
+				unsigned long free_cma = zone_page_state(zone,
+						NR_FREE_CMA_PAGES);
+				za->free -= free_cma;
+				*other_free -= free_cma;
+			}
+			continue;
+		}
+
+		if (zone_idx > classzone_idx) {
+			if (other_free != NULL)
+				*other_free -= za->free;
+			if (other_file != NULL)
+				*other_file -= za->file;
+			za->free = za->file = 0;
+		} else if (zone_idx < classzone_idx) {
+			if (zone_watermark_ok(zone, 0, 0, classzone_idx, 0)) {
+				unsigned long lowmem_reserve =
+					  zone->lowmem_reserve[classzone_idx];
+				if (!use_cma_pages) {
+					unsigned long free_cma =
+						zone_page_state(zone,
+							NR_FREE_CMA_PAGES);
+					unsigned long delta =
+						min(lowmem_reserve + free_cma,
+							za->free);
+					*other_free -= delta;
+					za->free -= delta;
+				} else {
+					*other_free -= lowmem_reserve;
+					za->free -= lowmem_reserve;
+				}
+			} else {
+				*other_free -= za->free;
+				za->free = 0;
+			}
+		}
+	}
+}
+
+#ifdef CONFIG_HIGHMEM
+void adjust_gfp_mask(gfp_t *gfp_mask)
+{
+	struct zone *preferred_zone;
+	struct zonelist *zonelist;
+	enum zone_type high_zoneidx;
+
+	if (current_is_kswapd()) {
+		zonelist = node_zonelist(0, *gfp_mask);
+		high_zoneidx = gfp_zone(*gfp_mask);
+		first_zones_zonelist(zonelist, high_zoneidx, NULL,
+				&preferred_zone);
+
+		if (high_zoneidx == ZONE_NORMAL) {
+			if (zone_watermark_ok_safe(preferred_zone, 0,
+					high_wmark_pages(preferred_zone), 0,
+					0))
+				*gfp_mask |= __GFP_HIGHMEM;
+		} else if (high_zoneidx == ZONE_HIGHMEM) {
+			*gfp_mask |= __GFP_HIGHMEM;
+		}
+	}
+}
+#else
+void adjust_gfp_mask(gfp_t *unused)
+{
+}
+
 #endif
 
 #if defined(CONFIG_ZSWAP)
