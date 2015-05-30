@@ -974,6 +974,7 @@ config MSM_DEVFREQ_CPUBW
 	  agnostic interface to so that some of the devfreq governors can be
 	  shared across SoCs.
 
+
 config ZEN_DECISION
 	bool "Zen Decision: MSM Userspace Handler"
 	depends on SMP && FB
@@ -1012,6 +1013,15 @@ config MSM_CPU_VOLTAGE_CONTROL
 	default y
 	help
 	  This enables userspace CPU Voltage Control.
+
+
+config FORCE_FAST_CHARGE
+	bool "Force fast charging (AC/USB)"
+	default n
+	help
+	  A simple sysfs interface to force adapters that
+	  are detected as USB to charge as AC (1A/h) or to set
+	  custom charging currents for AC and USB.
 
 
 config MSM_AVS_HW
