@@ -742,7 +742,6 @@ const char * const vmstat_text[] = {
 #endif
 	"nr_anon_transparent_hugepages",
 	"nr_free_cma",
-<<<<<<< HEAD
 #if defined(CONFIG_CMA_PAGE_COUNTING)
 	"nr_cma_inactive_anon",
 	"nr_cma_active_anon",
@@ -750,9 +749,6 @@ const char * const vmstat_text[] = {
 	"nr_cma_active_file",
 	"nr_cma_unevictable",
 #endif
-=======
-	"nr_swapcache",
->>>>>>> 8ccbada... lowmemorykiller: Don't count swap cache pages twice
 	"nr_dirty_threshold",
 	"nr_dirty_background_threshold",
 

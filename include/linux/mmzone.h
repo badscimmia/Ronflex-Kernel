@@ -153,7 +153,6 @@ enum zone_stat_item {
 #endif
 	NR_ANON_TRANSPARENT_HUGEPAGES,
 	NR_FREE_CMA_PAGES,
-<<<<<<< HEAD
 #if defined(CONFIG_CMA_PAGE_COUNTING)
 	NR_CMA_INACTIVE_ANON,
 	NR_CMA_ACTIVE_ANON,
@@ -161,9 +160,6 @@ enum zone_stat_item {
 	NR_CMA_ACTIVE_FILE,
 	NR_CMA_UNEVICTABLE,
 #endif
-=======
-	NR_SWAPCACHE,
->>>>>>> 8ccbada... lowmemorykiller: Don't count swap cache pages twice
 	NR_VM_ZONE_STAT_ITEMS };
 
 /*
