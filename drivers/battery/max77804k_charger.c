@@ -961,15 +961,10 @@ static int sec_chg_set_property(struct power_supply *psy,
 	int set_charging_current, set_charging_current_max;
 	int usb_charging_current = charger->pdata->charging_current[
 		POWER_SUPPLY_TYPE_USB].fast_charging_current;
-<<<<<<< HEAD
-#if defined(CONFIG_BATTERY_SWELLING)
-	u8 reg_data;
-#endif	
-=======
+
 	if (charge_current_override > 0)
 		usb_charging_current = charge_current_override;
 	current_now = 0;
->>>>>>> 104f828... Ported Fast charge for G901F
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_STATUS:
@@ -1078,19 +1073,7 @@ static int sec_chg_set_property(struct power_supply *psy,
 				(charger->status == POWER_SUPPLY_STATUS_DISCHARGING) ||
 				(value.intval == POWER_SUPPLY_HEALTH_UNSPEC_FAILURE) ||
 				(value.intval == POWER_SUPPLY_HEALTH_OVERHEATLIMIT)) {
-<<<<<<< HEAD
-			/* current setting */
-			max77804k_set_charge_current(charger,
-				set_charging_current);
-			/* if battery is removed, disable input current and reenable input current
-			  *  to enable buck always */
-			if (value.intval == POWER_SUPPLY_HEALTH_UNSPEC_FAILURE ||
-				value.intval == POWER_SUPPLY_HEALTH_OVERHEATLIMIT)
-				max77804k_set_input_current(charger, 0);
-			else
-				max77804k_set_input_current(charger,
-						set_charging_current_max);
-=======
+
 			if (!check_fastcharge(charger))
 			{
 				/* current setting */
@@ -1110,7 +1093,6 @@ static int sec_chg_set_property(struct power_supply *psy,
 					charger->pdata->charging_current[
 					val->intval].full_check_current_2nd);
 			}
->>>>>>> 104f828... Ported Fast charge for G901F
 		}
 		break;
 	/* val->intval : input charging current */
