@@ -1808,7 +1808,7 @@ config TIMA_LKMAUTH
 config TIMA_LKMAUTH_CODE_PROT
        bool
        depends on TIMA_LKMAUTH
-       default y 
+       default n 
        help
          When enabled, this feature will mark all Executable sections in an
          LKM as RO
